@@ -88,9 +88,8 @@
               if(locationGroup.getLayers()==0)
               {
                 data.Locations.forEach((location,index)=>{
-                  const marker=L.marker([location.Latitude,location.Longitude],
-                    {licence_plate: data.buses[index].licence_plate})
-                      .bindPopup(layer.options.license_plate);
+                  const marker=L.marker([location.Latitude,location.Longitude])
+                      .bindPopup(`${'xe Bus: '} ${data.buses[index].licence_plate}`);
                   locationGroup.addLayer(marker);
                 });
               }
@@ -98,7 +97,8 @@
                 locationGroup.eachLayer((layer,index)=>{
                   const newLatLng = L.latLng(data.Locations[index].Latitude,
                     data.Locations[index].Longitude);
-                  layer.setLatLng(newLatLng);    
+                  layer.setLatLng(newLatLng);
+                  layer.setPopupContent(`${'xe Bus: '} ${data.buses[index].licence_plate}`);
                 });
               }
             }

@@ -181,32 +181,33 @@ export class MapControlPanel{
                 this.typeActivity="reselect";
             }
         }
+        return true;
     }
-    FindRoute(Longitude,Latitude){
+    FindRoute(StartPoint,EndPoint){
         if(this.changeState=="changing")
             return false;
+
         this.changeState="changing";
-        if(this.Longitude!=Longitude ||
-            this.Latitude!=Latitude)
+        if(this.StartPoint)
         {
-            this.Longitude=Longitude;
-            this.Latitude=Latitude;
-            if(this.typeActivity!="refind")
+            if(this.StartPoint!=StartPoint ||
+                this.EndPoint!=EndPoint)
             {
-                this.typeActivity="refind"
-            }
-            else
-            {
-                this.typeActivity="find"
+                this.StartPoint=StartPoint;
+                this.EndPoint=EndPoint;
+                if(this.typeActivity!="refind")
+                {
+                    this.typeActivity="refind"
+                }
+                else
+                {
+                    this.typeActivity="find"
+                }
             }
         }
+        return true;
     }
-    // getChangeState(){return this.changeState}
-    // getLong(){return this.Longitude}
-    // getLat(){return this.Latitude}
-    // getType(){return this.typeActivity}
-    // getSelect(){return this.currentRoute}
-    // getCallback(){return this.Callback}
+
     getProps()
     {
         return {
