@@ -88,9 +88,8 @@ export default MapHTML=`<!DOCTYPE html>
           if(locationGroup.getLayers()==0)
           {
             data.Locations.forEach((location,index)=>{
-              const marker=L.marker([location.Latitude,location.Longitude],
-                {licence_plate: data.buses[index].licence_plate})
-                  .bindPopup(layer.options.license_plate);
+              const marker=L.marker([location.Latitude,location.Longitude])
+                  .bindPopup(\`\${'xe Bus: '} \${data.buses[index].licence_plate}\`);
               locationGroup.addLayer(marker);
             });
           }
@@ -98,7 +97,8 @@ export default MapHTML=`<!DOCTYPE html>
             locationGroup.eachLayer((layer,index)=>{
               const newLatLng = L.latLng(data.Locations[index].Latitude,
                 data.Locations[index].Longitude);
-              layer.setLatLng(newLatLng);    
+              layer.setLatLng(newLatLng);
+              layer.setPopupContent(\`\${'xe Bus: '} \${data.buses[index].licence_plate}\`);
             });
           }
         }
@@ -165,7 +165,7 @@ export default MapHTML=`<!DOCTYPE html>
         }
         else//(mode=="WALK")
         {
-          return fetch(\`https://api.geoapify.com/v1/routing?waypoints=\${From.join(',')}|\${To.join(',')}&mode=walk&apiKey=${apiKey}\`).then(res => res.json()).then(result => {
+          return fetch(\`https://api.geoapify.com/v1/routing?waypoints=\${From.join(',')}|\${To.join(',')}&mode=walk&apiKey=\${apiKey}\`).then(res => res.json()).then(result => {
 
           // Note! GeoJSON uses [longitude, latutude] format for coordinates
           const step=L.geoJSON(result, {

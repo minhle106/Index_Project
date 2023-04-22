@@ -45,8 +45,7 @@ const PASS_THINGSBOARD = '123456';
 function WebViewMap ({props}){
     const state= "noRoute";
     var listSchedule= null;
-    var timerFetchLocations=null;
-    var timerFetchBuses=null
+    var timerId=null;
     var JWT_Token=null;
     const webViewRef= useRef();
     
@@ -60,10 +59,8 @@ function WebViewMap ({props}){
 
       return ()=>{
         //Component unmount
-        if(timerFetchLocations)
-          clearInterval(timerFetchLocations);
-        if(timerFetchBuses)
-          clearInterval(timerFetchBuses);
+        if(timerId)
+          clearInterval(timerId);
       }},[])
 
     //Khi props thay đổi
@@ -269,67 +266,85 @@ function WebViewMap ({props}){
     FetchBuses(listSchedule)
     .then(()=>{
       clearInterval(timerId);
+      var count=0;
       timerId=setInterval(()=>{
-        FetchLocations(listSchedule.buses)
-        .then((Locations)=>{
-          UpdateHTMLLocations(Locations,listSchedule.buses)
-        })
+        if(count==12)
+        {
+          count=0;
+          FetchBuses(listSchedule)
+        }
+        else
+        {
+          FetchLocations(listSchedule.buses)
+          .then((Locations)=>{
+            UpdateHTMLLocations(Locations,listSchedule.buses)
+          })
+        }
       },REFRESH_INTERVAL)
+      props.Callback();
     });
   }
+
   function noSelect_select(){
     UpdateHTMLSchedule(listSchedule[props.currentRoute]);
     FetchBuses(listSchedule)
     .then(()=>{
       state="Selected";
+      var count=0;
       timerId=setInterval(()=>{
-        FetchLocations(listSchedule.buses)
-        .then((Locations)=>{
-          UpdateHTMLLocations(Locations,listSchedule.buses)
-        })
+        if(count==12)
+        {
+          count=0;
+          FetchBuses(listSchedule)
+        }
+        else
+        {
+          FetchLocations(listSchedule.buses)
+          .then((Locations)=>{
+            UpdateHTMLLocations(Locations,listSchedule.buses)
+          })
+        }
       },REFRESH_INTERVAL)
+      props.Callback();
     });
   }
 
-  function updateBusForRoute(data){
 
-  }
+  // function getBusForRoute(){
+  //   return new Promise((resolve, reject) => {
+  //     setTimeout(() => {
+  //       resolve({ 
+  //         data: { 
+  //           id: 1, 
+  //           name: "Product 1", 
+  //           price: 100 
+  //         } 
+  //       });
+  //     }, 2000);
+  //   });
+  // }
 
-  function getBusForRoute(){
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        resolve({ 
-          data: { 
-            id: 1, 
-            name: "Product 1", 
-            price: 100 
-          } 
-        });
-      }, 2000);
-    });
-  }
+  // function UpdateLocationBus(jwt_token,EntityId){
 
-  function UpdateLocationBus(jwt_token,EntityId){
-
-    newLocation=Promise_JWT_Token.then(()=>{
-      const url = LocationAPI(EntityId);
-      const headers = {
-        'Content-Type': 'application/json',
-        'X-Authorization': 'Bearer '+jwt_token
-      };
-      return axios.get(url, {
-        headers: headers,
-      })
-        .then(response => {
-          console.log(JSON.stringify(response.data));
-          return response.data
-        })
-        .catch(error => {
-          console.error(error);
-        });
-    })
-    return newLocation;////////////////////
-  }
+  //   newLocation=Promise_JWT_Token.then(()=>{
+  //     const url = LocationAPI(EntityId);
+  //     const headers = {
+  //       'Content-Type': 'application/json',
+  //       'X-Authorization': 'Bearer '+jwt_token
+  //     };
+  //     return axios.get(url, {
+  //       headers: headers,
+  //     })
+  //       .then(response => {
+  //         console.log(JSON.stringify(response.data));
+  //         return response.data
+  //       })
+  //       .catch(error => {
+  //         console.error(error);
+  //       });
+  //   })
+  //   return newLocation;////////////////////
+  // }
 
     return (
       <WebView
