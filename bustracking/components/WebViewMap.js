@@ -13,7 +13,8 @@ const AuthAPI = () => {
   return 'http://demo.thingsboard.io/api/auth/login'
 };
 const AppAPI = (service)=> {
-  return 'localhost:4000'+service;
+  return 'https://707215b6-b6df-4ae0-9749-7d261a9e3897.mock.pstmn.io'+service;
+  // return 'localhost:4000'+service;
 }
 const REFRESH_INTERVAL = 5000;
 const USER_THINGSBOARD = 'thanhnhanle1407@gmail.com';
@@ -49,12 +50,20 @@ function WebViewMap ({props}){
     var JWT_Token=null;
     const webViewRef= useRef();
     
+
     //Component mount
     useEffect(()=>{
       //Lấy JWT_Token của thingsboard
       getJWT_Token()
       .then((result)=>{
         JWT_Token=result;
+        
+        if(props.mode!="general")
+        {
+          state="noSelect";
+          listSchedule=props.listSchedule;
+          noSelect_select();
+        }
       })
 
       return ()=>{
@@ -126,22 +135,20 @@ function WebViewMap ({props}){
       });
   }
 
-  function FetchBuses(Schedules){
+  function FetchBuses(currentRoute){
     const url = AppAPI('/buses');
     const headers = {
       'Content-Type': 'application/json',
     };
-    const data=JSON.parse(JSON.stringify(Schedules))
+    const data=JSON.parse(JSON.stringify(Schedules[currentRoute]))
     
     return axios.post(url, {
       headers: headers, data: data,
     })
       .then(response => {
         console.log(response.data);
-        listSchedule=response.data.map(schedule => {
-          const temp= new MapViewClass.Schedule()
-          return temp.FromObj(schedule);
-        });
+        const temp= new MapViewClass.Schedule()
+        listSchedule[currentRoute]=temp.FromObj(schedule);
       })
       .catch(error => {
         console.error(error);
@@ -211,13 +218,10 @@ function WebViewMap ({props}){
     .then(()=>{
       if(listSchedule.length!=0){
         state="noSelect";
-        FetchBuses(listSchedule)
-        .then(()=>{
-          props.Callback();
-        })
+        props.Callback(listSchedule);
       }
       else{
-        props.Callback();
+        props.Callback(listSchedule);
       }
     })
   }
@@ -227,14 +231,11 @@ function WebViewMap ({props}){
     .then(()=>{
       if(listSchedule.length!=0){
         state="noSelect";
-        FetchBuses(listSchedule)
-        .then(()=>{
-          props.Callback();
-        })
+        props.Callback(listSchedule);
       }
       else{
         state="noRoute";
-        props.Callback();
+        props.Callback(listSchedule);
       }
     })
   }
@@ -244,26 +245,26 @@ function WebViewMap ({props}){
     .then(()=>{
       if(listSchedule.length!=0){
         state="noSelect";
-        FetchBuses(listSchedule)
+        FetchBuses(props.currentRoute)
         .then(()=>{
           state="noSelect"
           clearInterval(timerId);
           UpdateHTMLClear();
-          props.Callback();
+          props.Callback(listSchedule);
         })
       }
       else{
         state="noRoute";
         clearInterval(timerId);
         UpdateHTMLClear();
-        props.Callback();
+        props.Callback(listSchedule);
       }
     })
   }
 
   function Selected_select(){
     UpdateHTMLSchedule(listSchedule[props.currentRoute]);
-    FetchBuses(listSchedule)
+    FetchBuses(props.currentRoute)
     .then(()=>{
       clearInterval(timerId);
       var count=0;
@@ -271,7 +272,7 @@ function WebViewMap ({props}){
         if(count==12)
         {
           count=0;
-          FetchBuses(listSchedule)
+          FetchBuses(props.currentRoute)
         }
         else
         {
@@ -281,13 +282,13 @@ function WebViewMap ({props}){
           })
         }
       },REFRESH_INTERVAL)
-      props.Callback();
+      props.Callback(listSchedule,false);
     });
   }
 
   function noSelect_select(){
     UpdateHTMLSchedule(listSchedule[props.currentRoute]);
-    FetchBuses(listSchedule)
+    FetchBuses(props.currentRoute)
     .then(()=>{
       state="Selected";
       var count=0;
@@ -295,7 +296,7 @@ function WebViewMap ({props}){
         if(count==12)
         {
           count=0;
-          FetchBuses(listSchedule)
+          FetchBuses(props.currentRoute)
         }
         else
         {
@@ -305,7 +306,7 @@ function WebViewMap ({props}){
           })
         }
       },REFRESH_INTERVAL)
-      props.Callback();
+      props.Callback(listSchedule,false);
     });
   }
 

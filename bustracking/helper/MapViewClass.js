@@ -19,7 +19,7 @@ export class Location{
 }
 
 export class Bus{
-    constructor(EntityId,licence_plate,Location,timeArrive){
+    constructor(EntityId,licence_plate,Location){
         this.EntityId=EntityId;//string
         this.licence_plate=licence_plate;//string
     }
@@ -90,8 +90,6 @@ export class Schedule{
             .map(time=>{
                 return time;
             });
-
-        
     }
     // ToObj(){
     //     return {
@@ -153,15 +151,26 @@ export class BusStage{
 }
 
 export class MapControlPanel{
-    constructor(Callback){
+    constructor(Callback, listSchedule, currentRoute, mode){
         this.changeState="changed";
         this.typeActivity="no"
         this.StartPoint=null;
         this.EndPoint=null;
         this.currentRoute=null;
-        this.Callback=()=>{
-            this.changeState="changed";
-            Callback();};
+        if(mode=="general")
+        {
+            this.Callback=(listSchedule, mode=true)=>{
+                this.changeState="changed";
+                if(mode)
+                {
+                    Callback(listSchedule);};
+                }
+        }
+        else // mode="special"
+        {
+            this.listSchedule=listSchedule;
+            this.currentRoute=currentRoute;
+        }
     }
     SelectRoute(SelectRoute)
     {
@@ -211,11 +220,13 @@ export class MapControlPanel{
     getProps()
     {
         return {
+            mode: this.mode,
             StartPoint: this.StartPoint,
             EndPoint: this.EndPoint,
             typeActivity: this.typeActivity,
             currentRoute: this.currentRoute,
             Callback: this.Callback,
+            listSchedule: this.listSchedule,
         };
     }
 }

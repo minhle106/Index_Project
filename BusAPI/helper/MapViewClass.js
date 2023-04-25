@@ -19,7 +19,7 @@ export class Location{
 }
 
 export class Bus{
-    constructor(EntityId,licence_plate,Location,timeArrive){
+    constructor(EntityId,licence_plate,){
         this.EntityId=EntityId;//string
         this.licence_plate=licence_plate;//string
     }

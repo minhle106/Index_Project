@@ -1,5 +1,5 @@
-import { Prediction, Schedule} from "../functionAPI";
-const router = (app) => {
+import { Schedule, getBuses} from "../functionAPI.js";
+const routes = (app) => {
     app.post("/schedule", (request, response) => {
         const data=Schedule(request);
 		response.send(data);
@@ -9,4 +9,4 @@ const router = (app) => {
 		response.send(data);
 	});
 };
-export default router;
+export default routes;
