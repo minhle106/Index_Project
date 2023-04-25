@@ -1,5 +1,5 @@
 export class Location{
-    constructor(Name,Longitude,Latitude){
+    constructor(Name=null, Longitude=null, Latitude=null){
         this.Name=Name;//string
         this.Longitude=Longitude;//number
         this.Latitude=Latitude;//number
@@ -9,80 +9,82 @@ export class Location{
         this.Longitude=Obj.Longitude;//number
         this.Latitude=Obj.Latitude;//number
     }
-    // ToObj(){
-    //     return {
-    //         Name: this.Name,
-    //         Longitude: this.Longitude,
-    //         Latitude: this.Latitude,   
-    //     }     
-    // }
 }
 
+
 export class Bus{
-    constructor(EntityId,licence_plate,){
-        this.EntityId=EntityId;//string
+    constructor(location, busNumber, EntityId=null ,licence_plate=null){
+        this.location = location;
+        this.busNumber = busNumber;//string
+        this.EntityId=EntityId;
         this.licence_plate=licence_plate;//string
     }
     FromObj(Obj){
         this.EntityId=Obj.EntityId;//string
         this.licence_plate=Obj.licence_plate;//string
     }    
-    // ToObj(){
-    //     return {
-    //         EntityId: this.EntityId,
-    //         licence_plate: this.licence_plate,
-    //     }
-    // }
 }
 
 export class Schedule{
-    constructor(WalkStages=null,BusStages=null,buses=null,GeneralPredictTime=null, SpecificPredictTimes=null,BusLocations=null,ToStationTimes=null, GeneralDistance=null, SpecificDistances=null){
+    constructor(WalkStages=null,BusStages=null,GeneralPredictTime=null, SpecificPredictTimes=null, GeneralDistance=null, SpecificDistances=null, buses=null, ToStationTimes=null){
         this.WalkStages=WalkStages;// Các chặn đi bộ
         this.BusStages=BusStages;// Các chặn xe bus, chặn đi bộ nhiều hơn chặn xe bus 1 chặn
-        this.buses=buses;// Danh sách xe bus phù hợp
         this.GeneralPredictTime=GeneralPredictTime;// Tiên đoán thời gian hoàn thành lộ trình chung
         this.GeneralDistance=GeneralDistance;// Chiều dài tổng
         this.SpecificDistances=SpecificDistances;// Chiều dài mỗi chặn
         this.SpecificPredictTimes=SpecificPredictTimes;// Tiên đoán thời gian hoàn thành trên từng chặn nhỏ
-        this.BusLocations=BusLocations;// Vị trí xe bus hiện tại
-        this.ToStationTimes=ToStationTimes;//Thời gian cho mỗi xe bus đến trạm đầu của chặn
+        this.buses=buses;
+        this.ToStationTimes=ToStationTimes;
     }
     FromObj(Obj){
-        if(Obj.WalkStages)
+        // if(Obj.WalkStages)
             this.WalkStages=Obj.WalkStages
             .map(walkStage=>{
                 const temp= new WalkStage(null, null);
-                return temp.FromObj(walkStage)
+                temp.FromObj(walkStage);
+                return temp;
             });
         
-        if(Obj.BusStages)
+        // if(Obj.BusStages) 
             this.BusStages=Obj.BusStages
             .map(busStage=>{
                 const temp= new BusStage(null, null);
-                return temp.FromObj(busStage)
+                temp.FromObj(busStage);
+                return temp;
             });
 
         if(Obj.buses)
             this.buses=Obj.buses
             .map(bus=>{
                 const temp= new Bus(null, null);
-                return temp.FromObj(bus)
+                temp.FromObj(bus);
+                return temp;
             });
 
         if(Obj.GeneralPredictTime)
             this.GeneralPredictTime=Obj.GeneralPredictTime;
 
-        if(Obj.SpecificPredictTime)
+        if(Obj.SpecificPredictTimes)
             this.SpecificPredictTimes=Obj.SpecificPredictTimes
             .map(time=>{
                 return time;
             });
 
-        if(Obj.BusLocations)
-            this.BusLocations= Obj.BusLocations      
-            .map(location=>{
-                const temp= new Location(null, null);
-                return temp.FromObj(location)
+        if(Obj.GeneralDistance)
+            this.GeneralDistance=Obj.GeneralDistance;
+
+        if(Obj.SpecificDistances)
+            this.SpecificDistances=Obj.SpecificDistances
+            .map(dt=>{
+                return dt;
+            });
+
+        if(Obj.buses)
+            this.buses=Obj.buses
+            .map(bus=>{
+                const temp= new Bus(null, null);
+                temp.FromObj(bus);
+                return temp;
             });
 
         if(Obj.ToStationTimes)
@@ -90,24 +92,7 @@ export class Schedule{
             .map(time=>{
                 return time;
             });
-
-        
     }
-    // ToObj(){
-    //     return {
-    //         WalkStages: this.WalkStages.ToObj(),
-    //         BusStages: this.BusStages.ToObj(),
-    //         buses: this.buses.map(bus=>{
-    //             return bus.ToObj();
-    //         }),
-    //         GeneralPredictTime: this.GeneralPredictTime,
-    //         SpecificPredictTime: this.SpecificPredictTime,
-    //         BusLocations: this.BusLocations.map(location=>{
-    //             return location.ToObj();
-    //         }),
-    //         ToStationTimes: this.ToStationTimes,
-    //     }
-    // }
 }
 
 export class WalkStage{
@@ -118,7 +103,7 @@ export class WalkStage{
     FromObj(Obj){
         this.StartPoint=new Location(null,null,null);
         this.EndPoint=new Location(null,null,null);
-        EndPoint.FromObj(Obj.StartPoint);
+        this.EndPoint.FromObj(Obj.StartPoint);
         this.StartPoint.FromObj(Obj.EndPoint);
     }
     // ToObj(){
@@ -130,15 +115,16 @@ export class WalkStage{
 }
 
 export class BusStage{
-    constructor(listLocation, RouteId){
-        this.listLocation=listLocation;
-        this.RouteId=RouteId;
+    constructor(listLocation, RouteId=null) {
+        this.RouteId = RouteId;
+        this.listLocation = listLocation;
     }
     FromObj(Obj){
         this.listLocation=Obj.listLocation
         .map(location=>{
             const temp= new Location(null,null,null);
-            return temp.FromObj(location);
+            temp.FromObj(location);
+            return temp;
         });
         this.RouteId=Obj.RouteId;
     }
