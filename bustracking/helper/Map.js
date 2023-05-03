@@ -15,8 +15,6 @@ const MapHTML=
   </head>
   <body>
     <div id="mapid" style="height: 100vh;"></div>
-    // <div>Is log: </div>
-    // <div id="log"></div>
 
 
     <script>
@@ -98,7 +96,7 @@ const MapHTML=
         }
         else{//data là {Locations: [<Location>],buses: [<Bus>]} ở dạng obj
           count++;
-          // document.getElementById("log").innerHTML=\`\${count}\`;
+
           if(locationGroup.getLayers()==0)
           {
             data.Locations.forEach((location,index)=>{
