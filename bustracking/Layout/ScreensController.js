@@ -21,11 +21,11 @@ export default function ScreensController() {
           component={Tickets}
           options={{ title: 'Search Results', headerShown: false }}
         />
-         <Stack.Screen
+         {/* <Stack.Screen
           name="History"
           component={History}
           options={{ title: 'Purchased Tickets', headerShown: false }}
-        />
+        /> */}
       </Stack.Navigator>
     </NavigationContainer>
   );

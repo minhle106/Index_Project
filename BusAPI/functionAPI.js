@@ -162,18 +162,18 @@ function findBusRoutes(StartPoint, EndPoint) {
                 if(listRoute.length!=0)
                 for (const route of listRoute) {
                     let k=0;
-                    for (const loca of route.listLocation) {
-                        if(busStages[k] && busStages[k].listLocation && busStages[k].listLocation.includes(loca)){
-                            if (!route.RouteId) {
-                                route.RouteId = [];
+                    for(let k=0;k<busStages.length;k++)
+                        for (const loca of route.listLocation) {
+                            if(busStages[k] && busStages[k].listLocation && busStages[k].listLocation.includes(loca)){
+                                if (!route.RouteId) {
+                                    route.RouteId = [];
+                                }
+                                else if(!route.RouteId.includes(busStages[k].RouteId)){
+                                    route.RouteId += busStages[k].RouteId + " ";
+                                    // console.log("   #Add busStages: ", busStages[k].RouteId, "---------------");
+                                }
                             }
-                            if(route.RouteId==null || !route.RouteId.includes(busStages[k].RouteId)){
-                                route.RouteId += busStages[k].RouteId + " ";
-                            }
-                        }else{
-                            k = k+1; 
                         }
-                    }
                 }
             }
             if(listRoute.length!=0)
@@ -222,7 +222,7 @@ export function getAppropriateBusAndTime(listBus, schedule)
     let index = -1;
     for(var i=0; i<listBus.length; i++){
         let distance = calculateDistance(listBus[i].location, (schedule.BusStages[0].listLocation)[0]);
-        if(distance < minDistance && listBus[i].busNumber === (schedule.BusStages[0].RouteId).substring(0,2)){
+        if(distance < minDistance && (schedule.BusStages[0].RouteId).split(" ").includes(listBus[i].busNumber)){
             minDistance = distance;
             index = i;
         }
@@ -232,9 +232,48 @@ export function getAppropriateBusAndTime(listBus, schedule)
 
 
    // TESTCASE
-const startPoint = new Location("StartPoint", 106.80, 10.88);
-const endPoint = new Location("EndPoint",106.676, 10.76);
+const startPoint = new Location("StartPoint", 106.78240376903743, 10.88230385);
+const endPoint = new Location("EndPoint",106.8009562, 10.8702524);
 const listBus = [new Bus(startPoint,"50"), new Bus(endPoint,"53")];
 let list = Scheduled(startPoint, endPoint);
 console.log(list[0]);
 console.log(getAppropriateBusAndTime(listBus, list[0]));
+
+// FetchSchedules(startPoint,endPoint);
+
+
+// const AppAPI = (service)=> {
+//     // return 'https://707215b6-b6df-4ae0-9749-7d261a9e3897.mock.pstmn.io'+service;
+//     return '192.168.0.104:3002'+service;
+// }
+
+// import axios from 'axios'
+
+// async function FetchSchedules(StartP,EndP)
+// {
+//   const url = 'localhost:3002/schedule';
+//   const headers = {
+//     'Content-Type': 'application/json',
+//   };
+//   const data={
+//     StartPoint: StartP,
+//     EndPoint: EndP
+//   }
+//   try {
+//     const response = await axios.post(url, data,{
+//       headers: headers});
+//     // console.log("response: ",JSON.stringify(response.data));
+//     //Thay đổi listSchedule
+//     console.log("@@FetchSchedules response.data: ",response.data,"------------------------------@@")
+//     listSchedule = response.data.map((schedule) => {
+//       const temp = new MapViewClass.Schedule();
+      
+//       temp.FromObj(schedule);
+//       // console.log("temp: ", temp);
+//       return temp;
+//     });
+//     console.log("@@FetchSchedules End---------------------------@@")
+//   } catch (error) {
+//     console.error(error);
+//   }
+// }

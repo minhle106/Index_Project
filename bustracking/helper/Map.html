@@ -32,11 +32,21 @@
           var layerGroup=L.layerGroup();
           var locationGroup=L.layerGroup();
 
+                //Màu của kí hiệu bus
+          var redIcon = L.icon({
+            iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+        });
+    
+
           window.addEventListener('message', (event) => {
             const message = event.data;
             const data = JSON.parse(message);
             // Xử lý đối tượng JSON được gửi từ ứng dụng React Native tại đây
             Update(data.type,data.data);
+            console.log("@@-------------------------In WebView------------------------------@@")
           });
 
           function Update(type, data)// data là Schedule
@@ -88,19 +98,25 @@
               if(locationGroup.getLayers()==0)
               {
                 data.Locations.forEach((location,index)=>{
-                  const marker=L.marker([location.Latitude,location.Longitude])
-                      .bindPopup(`${'xe Bus: '} ${data.buses[index].licence_plate}`);
+                  const marker=L.marker([location.Latitude,location.Longitude],{icon: redIcon})
+                      .bindPopup(`${'xe Bus: '} ${data.buses[index].licence_plate}${'Longitude: '}${(location.Longitude).toFixed(2)}
+                  ${'Latitude: '}${(location.Latitude).toFixed(2)}`);
                   locationGroup.addLayer(marker);
                 });
+                locationGroup.addTo(map)
+                console.log("to_Location1")
               }
               else{
                 locationGroup.eachLayer((layer,index)=>{
                   const newLatLng = L.latLng(data.Locations[index].Latitude,
                     data.Locations[index].Longitude);
                   layer.setLatLng(newLatLng);
-                  layer.setPopupContent(`${'xe Bus: '} ${data.buses[index].licence_plate}`);
+                  layer.setPopupContent(`${'xe Bus: '}${data.buses[index].licence_plate}
+                 `);
                 });
+                console.log("to_Location1")
               }
+              console.log("to_Location")
             }
           }
           function getCoordinate(Location){
@@ -237,6 +253,20 @@
               ],
           };
           Update("Schedule",schedule);
+          
+          const Locations=[{
+            Name: "b3",
+            Longitude: 106.802868,
+            Latitude: 10.8772439,   
+          }]
+          const buses=[{
+            EntityId: "1weff",
+            licence_plate: '50A-1345'
+          }]
+          const data={
+            Locations:Locations, buses:buses
+          }
+          Update("Locations",data);
         </script>
       </body>
     </html>

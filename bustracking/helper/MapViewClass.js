@@ -19,7 +19,7 @@ export class Location{
 }
 
 export class Bus{
-    constructor(EntityId,licence_plate,Location){
+    constructor(EntityId,licence_plate){
         this.EntityId=EntityId;//string
         this.licence_plate=licence_plate;//string
     }
@@ -44,45 +44,57 @@ export class Schedule{
         this.GeneralDistance=GeneralDistance;
         this.SpecificDistances=SpecificDistances;
         this.SpecificPredictTimes=SpecificPredictTimes;
-        this.BusLocations=BusLocations;
         this.ToStationTimes=ToStationTimes;
     }
     FromObj(Obj){
-        if(Obj.WalkStages)
+        // if(Obj.WalkStages)
             this.WalkStages=Obj.WalkStages
             .map(walkStage=>{
                 const temp= new WalkStage(null, null);
-                return temp.FromObj(walkStage)
+                temp.FromObj(walkStage);
+                return temp;
             });
         
-        if(Obj.BusStages)
+        // if(Obj.BusStages) 
             this.BusStages=Obj.BusStages
             .map(busStage=>{
                 const temp= new BusStage(null, null);
-                return temp.FromObj(busStage)
+                temp.FromObj(busStage);
+                return temp;
             });
 
         if(Obj.buses)
             this.buses=Obj.buses
             .map(bus=>{
                 const temp= new Bus(null, null);
-                return temp.FromObj(bus)
+                temp.FromObj(bus);
+                return temp;
             });
 
         if(Obj.GeneralPredictTime)
             this.GeneralPredictTime=Obj.GeneralPredictTime;
 
-        if(Obj.SpecificPredictTime)
+        if(Obj.SpecificPredictTimes)
             this.SpecificPredictTimes=Obj.SpecificPredictTimes
             .map(time=>{
                 return time;
             });
 
-        if(Obj.BusLocations)
-            this.BusLocations= Obj.BusLocations      
-            .map(location=>{
-                const temp= new Location(null, null);
-                return temp.FromObj(location)
+        if(Obj.GeneralDistance)
+            this.GeneralDistance=Obj.GeneralDistance;
+
+        if(Obj.SpecificDistances)
+            this.SpecificDistances=Obj.SpecificDistances
+            .map(dt=>{
+                return dt;
+            });
+
+        if(Obj.buses)
+            this.buses=Obj.buses
+            .map(bus=>{
+                const temp= new Bus(null, null);
+                temp.FromObj(bus);
+                return temp;
             });
 
         if(Obj.ToStationTimes)
@@ -116,8 +128,8 @@ export class WalkStage{
     FromObj(Obj){
         this.StartPoint=new Location(null,null,null);
         this.EndPoint=new Location(null,null,null);
-        EndPoint.FromObj(Obj.StartPoint);
-        this.StartPoint.FromObj(Obj.EndPoint);
+        this.EndPoint.FromObj(Obj.EndPoint);
+        this.StartPoint.FromObj(Obj.StartPoint);
     }
     // ToObj(){
     //     return{
@@ -136,7 +148,8 @@ export class BusStage{
         this.listLocation=Obj.listLocation
         .map(location=>{
             const temp= new Location(null,null,null);
-            return temp.FromObj(location);
+            temp.FromObj(location);
+            return temp;
         });
         this.RouteId=Obj.RouteId;
     }
@@ -156,69 +169,112 @@ export class MapControlPanel{
         this.typeActivity="no"
         this.StartPoint=null;
         this.EndPoint=null;
-        this.currentRoute=null;
+        this.currentRoute=-1;
+        this.listSchedule=[];
+        console.log("construct---t");
         if(mode=="general")
         {
+            this.mode="general"
             this.Callback=(listSchedule, mode=true)=>{
+                console.log("@@ControlPanel set changeState to #Changed---------@@");
                 this.changeState="changed";
+                this.listSchedule=listSchedule;
                 if(mode)
                 {
+                    console.log("@@--------------CALLBACK--------------------@@")
                     Callback(listSchedule);};
                 }
         }
         else // mode="special"
         {
+            this.mode="special"
             this.listSchedule=listSchedule;
             this.currentRoute=currentRoute;
         }
     }
     SelectRoute(SelectRoute)
     {
+        console.log("@@SelectRoute***StateChange is:", this.changeState," --------------------------------------");
         if(this.changeState=="changing")
             return false;
-        this.changeState="changing";
+        
         if(this.currentRoute!=SelectRoute)
         {
+            this.changeState="changing";
             this.currentRoute=SelectRoute;
             if(this.typeActivity=="find" || 
                 this.typeActivity=="refind" ||
                 this.typeActivity=="reselect")
             {
                 this.typeActivity="select";
+                console.log("@@SelectRoute--------------select----------------@@")
             }
             else if(this.typeActivity=="select"){
                 this.typeActivity="reselect";
+                console.log("@@SelectRoute--------------reselect----------------@@")
             }
         }
         return true;
     }
+    EndSelect(){
+        return new Promise(function(myResolve, myReject) {
+            let x = 0;
+          
+            this.typeActivity=="no"
+            this.changeState="changing";
+            const id=setInterval(()=>{
+                if(this.changeState="changed")
+                {
+                    clearInterval(id);
+                    myResolve("OK");
+                }
+                    
+            },300);
+          });
+    }
     FindRoute(StartPoint,EndPoint){
+        console.log("@@StateChange is:", this.changeState," --------------------------------------");
         if(this.changeState=="changing")
             return false;
-
-        this.changeState="changing";
-        if(this.StartPoint)
+        
+        
+        if(StartPoint && EndPoint)
         {
+            console.log("FindRoute")
             if(this.StartPoint!=StartPoint ||
                 this.EndPoint!=EndPoint)
             {
+                this.currentRoute=-1
+                this.changeState="changing";
                 this.StartPoint=StartPoint;
                 this.EndPoint=EndPoint;
                 if(this.typeActivity!="refind")
                 {
+                    console.log("inifFindRoute")
                     this.typeActivity="refind"
                 }
                 else
                 {
                     this.typeActivity="find"
+
                 }
             }
         }
+        else return false;
         return true;
     }
 
     getProps()
     {
+        console.log('Control Panel return Props is: ',{
+            mode: this.mode,
+            StartPoint: this.StartPoint,
+            EndPoint: this.EndPoint,
+            typeActivity: this.typeActivity,
+            currentRoute: this.currentRoute,
+            Callback: this.Callback,
+            listSchedule: this.listSchedule,
+        })
         return {
             mode: this.mode,
             StartPoint: this.StartPoint,

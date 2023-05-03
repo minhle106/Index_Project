@@ -4,7 +4,9 @@ import React, { useEffect, useState, useRef} from 'react';
 import axios from 'axios';
 import * as MapViewClass from '../helper/MapViewClass'
 import { Text, View, StyleSheet} from 'react-native';
-import {MapHTML} from '../helper/Map.html'
+import MapHTML from '../helper/Map.js'
+
+console.log("@@--MapHTML-----------------",MapHTML)
 
 const LocationAPI = (EntityID) => {
   return 'http://demo.thingsboard.io/api/plugins/telemetry/DEVICE/' + EntityID + '/values/timeseries'
@@ -13,11 +15,11 @@ const AuthAPI = () => {
   return 'http://demo.thingsboard.io/api/auth/login'
 };
 const AppAPI = (service)=> {
-  return 'https://707215b6-b6df-4ae0-9749-7d261a9e3897.mock.pstmn.io'+service;
-  // return 'localhost:4000'+service;
+  // return 'https://707215b6-b6df-4ae0-9749-7d261a9e3897.mock.pstmn.io'+service;
+  return 'https://bus-api-nhanlebkhcm.vercel.app'+service;
 }
 const REFRESH_INTERVAL = 5000;
-const USER_THINGSBOARD = 'thanhnhanle1407@gmail.com';
+const USER_THINGSBOARD = 'minhletravel106@gmail.com';
 const PASS_THINGSBOARD = '123456';
 
 // props:
@@ -44,51 +46,63 @@ const PASS_THINGSBOARD = '123456';
 //
 
 function WebViewMap ({props}){
-    const state= "noRoute";
-    var listSchedule= null;
-    var timerId=null;
-    var JWT_Token=null;
-    const webViewRef= useRef();
+    const [state,setState]=useState({
+      state: "noRoute",
+      listSchedule: [],
+      timerId: null,
+      JWT_Token: null,
+      webViewRef: useRef(),
+    });
+    const [rerender,setRerender]=useState(false);
+
     
 
     //Component mount
     useEffect(()=>{
       //Lấy JWT_Token của thingsboard
+      console.log("@@-----------------\n@@USE-EFFECT at DidMount-------------------------@@")
       getJWT_Token()
       .then((result)=>{
-        JWT_Token=result;
-        
+        state.JWT_Token=result;
+        console.log("@@-----------------\n@@USE-EFFECT get JWT_Token-------------------------@@",state.JWT_Token)
         if(props.mode!="general")
         {
-          state="noSelect";
-          listSchedule=props.listSchedule;
+          state.state="noSelect";
+          state.listSchedule=props.listSchedule;
           noSelect_select();
         }
       })
 
       return ()=>{
         //Component unmount
-        if(timerId)
-          clearInterval(timerId);
+        if(state.timerId)
+          clearInterval(state.timerId);
       }},[])
-
+    console.log("aboveuseEff")
+    console.log(props.typeActivity)
     //Khi props thay đổi
     useEffect(()=>{
-      
+      console.log("useEffWVM with State: ",state.state)
       if(props.typeActivity=="find"||props.typeActivity=="refind")
       {
-        if(state=="noRoute"){noRoute_find();}
-        else if(state=="noSelect"){noSelect_find();}
-        else if(state=="Selected"){Selected_find();}
+        if(state.state=="noRoute"){ console.log('inWebViewfindroute1'); noRoute_find();}
+        else if(state.state=="noSelect"){console.log('inWebViewfindroute2'); noSelect_find();}
+        else if(state.state=="Selected"){console.log('inWebViewfindroute3'); Selected_find();}
       }
       else if(props.typeActivity=="select"||props.typeActivity=="reselect")
       {
-        if(state=="noSelect"){noSelect_select();}
-        else if(state=="Selected"){Selected_select();}
+        if(state.state=="noSelect"){console.log('inWebViewfindroute4'); noSelect_select();}
+        else if(state.state=="Selected"){console.log('inWebViewfindroute5'); Selected_select();}
+      }
+      else
+      {
+        if(state.state=="Selected"){
+          Selected_no();
+        }
       }
     },[props.typeActivity])
 
-  function getJWT_Token(){
+  async function getJWT_Token(){
     const url = AuthAPI();
     const headers = {
       'Content-Type': 'application/json',
@@ -98,130 +112,150 @@ function WebViewMap ({props}){
       "username":USER_THINGSBOARD,
       "password":PASS_THINGSBOARD
     };
-    return axios.post(url, data, {
-      headers: headers,
-    })
-      .then(response => {
-        return response.data["token"];
-      })
-      .catch(error => {
-        console.error(error);
+    try {
+      const response = await axios.post(url, data, {
+        headers: headers,
       });
+      return response.data["token"];
+    } catch (error) {
+      console.error(error);
+    }
   }
 
-  function FetchSchedules(StartP,EndP)
+  async function FetchSchedules(StartP,EndP)
   {
     const url = AppAPI('/schedule');
     const headers = {
       'Content-Type': 'application/json',
     };
-    const param={
+    const data={
       StartPoint: StartP,
       EndPoint: EndP
     }
-    return axios.get(url, {
-      headers: headers, params: param
-    })
-      .then(response => {
-        console.log(response.data);
-        //Thay đổi listSchedule
-        listSchedule=response.data.map(schedule => {
-          const temp= new MapViewClass.Schedule()
-          return temp.FromObj(schedule);
-        });
-      })
-      .catch(error => {
-        console.error(error);
+    console.log(JSON.stringify(data));
+    try {
+      const response = await axios.post(url, data,
+        {headers: headers});
+      // console.log("response: ",JSON.stringify(response.data));
+      //Thay đổi listSchedule
+      console.log("@@FetchSchedules response.data: ",response.data,"------------------------------@@")
+      state.listSchedule = response.data.map((schedule) => {
+        const temp = new MapViewClass.Schedule();
+        
+        temp.FromObj(schedule);
+        // console.log("temp: ", temp);
+        return temp;
       });
+      console.log("@@FetchSchedules End---------------------------@@")
+    } catch (error) {
+      console.error(error);
+    }
   }
 
-  function FetchBuses(currentRoute){
+  async function FetchBuses(currentRoute){
     const url = AppAPI('/buses');
     const headers = {
       'Content-Type': 'application/json',
     };
-    const data=JSON.parse(JSON.stringify(Schedules[currentRoute]))
-    
-    return axios.post(url, {
-      headers: headers, data: data,
-    })
-      .then(response => {
-        console.log(response.data);
-        const temp= new MapViewClass.Schedule()
-        listSchedule[currentRoute]=temp.FromObj(schedule);
-      })
-      .catch(error => {
-        console.error(error);
-      });
+    const data=JSON.parse(JSON.stringify(state.listSchedule[currentRoute]))
+    console.log("@@----FetchBuses--Schedule",data,"-----@@")
+    try {
+      console.log("@@-----------------------FetchBuses-----------------------@@")
+      const response = await axios.post(url, data,
+        {headers: headers});
+      console.log("@@------Response.data of FetchBuses: ",response.data);
+      const temp = new MapViewClass.Schedule();
+      temp.FromObj(response.data);
+      state.listSchedule[currentRoute] = temp;
+      console.log("@@------state.listSchedule[currentRoute] of FetchBuses: ",state.listSchedule[currentRoute]);
+    } catch (error) {
+      console.error(error);
+    }
   }
   function FetchLocations(buses)
   {
-    const EntityIds= buses.array.forEach(bus => {
+    return getJWT_Token().then(()=>{
+    console.log("@@----FetchLocations------@@", buses[0].EntityId)
+    const EntityIds= buses.map((bus) => {
       return bus.EntityId;
     });
     const urls =EntityIds.map((EntityID)=>{ return LocationAPI(EntityID)});
+    console.log("@@----FetchLocations--URLS----@@", urls[0])
     const headers = {
       'Content-Type': 'application/json',
-      'X-Authorization': 'Bearer '+ JWT_Token
+      'X-Authorization': 'Bearer '+ state.JWT_Token
     };
-    if(JWT_Token)
+
+    if(state.JWT_Token)
     {
       return Promise.all(urls.map((url)=>{return axios.get(url, {
         headers: headers,
       })}))
         .then(response => {
           const listLocation=[];
-          JSON.parse(response.data).array.forEach(telemetry => {
-            const tempLo=new MapViewClass.Location("",telemetry.longitude[0].value, 
-              telemetry.latitude[0].value);
+          response=response[0];
+          console.log("@@------------RESPONSE from THINGSBOARD:",response.data)
+
+            const tempLo=new MapViewClass.Location("",response.data.longitude[0].value, 
+            response.data.latitude[0].value);
+              console.log("@@------------RESULT Location THINGSBOARD:",tempLo)
             listLocation.push(tempLo);
-          });
           return listLocation;
         })
         .catch(error => {
-          console.error(error);
+          console.error("@@---Huhu fail request: ",error);
         });
     }
     else console.error("Fetch Location nhưng không có JWT_Token!")
+  })
   }
 
   function UpdateHTMLSchedule(Schedule){
+    console.log("@@----------UpdateHTMLSchedule---------@",Schedule)
     const mess={
       type: "Schedule",
       data: JSON.parse(JSON.stringify(Schedule))};
-    webViewRef.current.postMessage(mess);
+      console.log("@@-----------------PostMessage------------------------@@",state.webViewRef.current)
+    state.webViewRef.current.postMessage(JSON.stringify(mess));
   }
 
   function UpdateHTMLLocations(Locations,buses){
     const mess={
       type: "Locations",
       data: {
-        Locations: Locations.forEach((location)=>{
+        Locations: Locations.map((location)=>{
           return JSON.parse(JSON.stringify(location))
         }),
-        buses: buses.forEach((bus)=>{
+        buses: buses.map((bus)=>{
           return JSON.parse(JSON.stringify(bus))
         }),
       }};
-    webViewRef.current.postMessage(mess);
+    console.log("@@--UpdateHTMLLocation: ",mess);
+    state.webViewRef.current.postMessage(JSON.stringify(mess));
   }
 
   function UpdateHTMLClear(){
     const mess={
       type: "Clear",
       data: {}};
-    webViewRef.current.postMessage(mess);
+    state.webViewRef.current.postMessage(JSON.stringify(mess));
+  }
+
+  function Selected_no(){
+    clearInterval(state.timerId);
+    state.state="noSelect";
+    props.Callback(state.listSchedule);
   }
 
   function noRoute_find(){
-    FetchSchedules(props.StartPoint, props.EndPoint)
-    .then(()=>{
-      if(listSchedule.length!=0){
-        state="noSelect";
-        props.Callback(listSchedule);
+    FetchSchedules(props.StartPoint, props.EndPoint).then(()=>{
+      if(state.listSchedule.length!=0){
+        state.state="noSelect";
+        props.Callback(state.listSchedule);
+        console.log("@@success noRoute_find!")
       }
       else{
-        props.Callback(listSchedule);
+        props.Callback(state.listSchedule);
       }
     })
   }
@@ -229,46 +263,42 @@ function WebViewMap ({props}){
   function noSelect_find(){
     FetchSchedules(props.StartPoint, props.EndPoint)
     .then(()=>{
-      if(listSchedule.length!=0){
-        state="noSelect";
-        props.Callback(listSchedule);
+      if(state.listSchedule.length!=0){
+        state.state="noSelect";
+        props.Callback(state.listSchedule);
       }
       else{
-        state="noRoute";
-        props.Callback(listSchedule);
+        state.state="noRoute";
+        props.Callback(state.listSchedule);
       }
     })
   }
 
   function Selected_find(){
+    clearInterval(state.timerId);
     FetchSchedules(props.StartPoint, props.EndPoint)
     .then(()=>{
-      if(listSchedule.length!=0){
-        state="noSelect";
-        FetchBuses(props.currentRoute)
-        .then(()=>{
-          state="noSelect"
-          clearInterval(timerId);
-          UpdateHTMLClear();
-          props.Callback(listSchedule);
-        })
+      if(state.listSchedule.length!=0){
+        state.state="noSelect";
+        console.log("@@---Selected_find-----------------------@@")
+        UpdateHTMLClear();
+        props.Callback(state.listSchedule);
       }
       else{
-        state="noRoute";
-        clearInterval(timerId);
+        state.state="noRoute";
         UpdateHTMLClear();
-        props.Callback(listSchedule);
+        props.Callback(state.listSchedule);
       }
     })
   }
 
   function Selected_select(){
-    UpdateHTMLSchedule(listSchedule[props.currentRoute]);
+    clearInterval(state.timerId);
+    UpdateHTMLSchedule(state.listSchedule[props.currentRoute]);
     FetchBuses(props.currentRoute)
     .then(()=>{
-      clearInterval(timerId);
       var count=0;
-      timerId=setInterval(()=>{
+      state.timerId=setInterval(()=>{
         if(count==12)
         {
           count=0;
@@ -276,23 +306,27 @@ function WebViewMap ({props}){
         }
         else
         {
-          FetchLocations(listSchedule.buses)
+          console.log("@@Selected_select--FetchLocations-----------------------@@")
+          FetchLocations(state.listSchedule[props.currentRoute].buses)
           .then((Locations)=>{
-            UpdateHTMLLocations(Locations,listSchedule.buses)
+            UpdateHTMLLocations(Locations,state.listSchedule[props.currentRoute].buses)
           })
         }
       },REFRESH_INTERVAL)
-      props.Callback(listSchedule,false);
+      props.Callback(state.listSchedule);
     });
   }
 
   function noSelect_select(){
-    UpdateHTMLSchedule(listSchedule[props.currentRoute]);
+
+    UpdateHTMLSchedule(state.listSchedule[props.currentRoute]);
+    console.log("@@noSelect_select--UpdateHTMLShedule-----------------------@@")
     FetchBuses(props.currentRoute)
     .then(()=>{
-      state="Selected";
+      console.log("@@noSelect_select--FetchBuses-----------------------@@")
+      state.state="Selected";
       var count=0;
-      timerId=setInterval(()=>{
+      state.timerId=setInterval(()=>{
         if(count==12)
         {
           count=0;
@@ -300,57 +334,21 @@ function WebViewMap ({props}){
         }
         else
         {
-          FetchLocations(listSchedule.buses)
+          console.log("@@noSelect_select--FetchLocations-----------------------@@")
+          FetchLocations(state.listSchedule[props.currentRoute].buses)
           .then((Locations)=>{
-            UpdateHTMLLocations(Locations,listSchedule.buses)
+            UpdateHTMLLocations(Locations,state.listSchedule[props.currentRoute].buses)
           })
         }
       },REFRESH_INTERVAL)
-      props.Callback(listSchedule,false);
+      props.Callback(state.listSchedule);
     });
   }
-
-
-  // function getBusForRoute(){
-  //   return new Promise((resolve, reject) => {
-  //     setTimeout(() => {
-  //       resolve({ 
-  //         data: { 
-  //           id: 1, 
-  //           name: "Product 1", 
-  //           price: 100 
-  //         } 
-  //       });
-  //     }, 2000);
-  //   });
-  // }
-
-  // function UpdateLocationBus(jwt_token,EntityId){
-
-  //   newLocation=Promise_JWT_Token.then(()=>{
-  //     const url = LocationAPI(EntityId);
-  //     const headers = {
-  //       'Content-Type': 'application/json',
-  //       'X-Authorization': 'Bearer '+jwt_token
-  //     };
-  //     return axios.get(url, {
-  //       headers: headers,
-  //     })
-  //       .then(response => {
-  //         console.log(JSON.stringify(response.data));
-  //         return response.data
-  //       })
-  //       .catch(error => {
-  //         console.error(error);
-  //       });
-  //   })
-  //   return newLocation;////////////////////
-  // }
 
     return (
       <WebView
         style={styles.container}
-        ref={webViewRef}
+        ref={state.webViewRef}
         source={{ html: MapHTML }}
       />
       
@@ -359,8 +357,10 @@ function WebViewMap ({props}){
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: 'white',
     flex: 1,
-    backgroundColor: 'white'
+    flexDirection: 'row',
+    borderRadius:10,
   },
 })
 
