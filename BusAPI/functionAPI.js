@@ -108,10 +108,10 @@ function degToRad(deg) {
 }
 function calculateDistance(location1, location2) {
     const R = 6371;
-    const lat1 = location1.latitude;
-    const lon1 = location1.longitude;
-    const lat2 = location2.latitude;
-    const lon2 = location2.longitude;
+    const lat1 = location1.Latitude;
+    const lon1 = location1.Longitude;
+    const lat2 = location2.Latitude;
+    const lon2 = location2.Longitude;
     const dLat = degToRad(lat2 - lat1);
     const dLon = degToRad(lon2 - lon1);
     const a =
@@ -123,12 +123,15 @@ function calculateDistance(location1, location2) {
 }
 
 function getNearestBusStop(location) {
-    let nearestBusStop = null;
+    let nearestBusStop = [];
     let minDistance = Infinity;
     for (let busStop of locations) {
         let distance = calculateDistance(location, busStop);
         if (distance < minDistance) {
-            nearestBusStop = busStop;
+            if(nearestBusStop.length==5){
+                nearestBusStop.shift()
+            }
+            nearestBusStop.push(busStop);
             minDistance = distance;
         }
     }
@@ -137,33 +140,49 @@ function getNearestBusStop(location) {
 
 function findBusRoutes(StartPoint, EndPoint) {
     let listRoute = [];
-    let firstBusStop = getNearestBusStop(StartPoint);
-    let endBusStop = getNearestBusStop(EndPoint);
-    if(firstBusStop && endBusStop){
-        let indexfirst = locations.indexOf(firstBusStop);
-        let indexend = locations.indexOf(endBusStop);
-        const shortestPaths = findShortestPaths(graph, indexfirst, indexend, 3);
-        listRoute = [new BusStage(shortestPaths[0].map(index => locations[index]),null),
-                        new BusStage(shortestPaths[1].map(index => locations[index]),null),
-                        new BusStage(shortestPaths[2].map(index => locations[index]),null)];
-
-        for (const route of listRoute) {
-            let k=0;
-            for (const loca of route.locations) {
-                if(busStages[k] && busStages[k].locations && busStages[k].locations.includes(loca)){
-                    if (!route.routeId) {
-                        route.routeId = [];
-                    }
-                    if(route.routeId==null || !route.routeId.includes(busStages[k].routeId)){
-                        route.routeId += busStages[k].routeId + " ";
-                    }
-                }else{
-                    k = k+1; 
+    for(let m=4; m>=0;m--)
+    {
+        for(let j=4; j>=0;j--)
+        {
+            console.log("--------------------------------------------------------------")
+            let firstBusStop = getNearestBusStop(StartPoint)[m];
+            let endBusStop = getNearestBusStop(EndPoint)[j];
+            if(firstBusStop && endBusStop){
+                let indexfirst = locations.indexOf(firstBusStop);
+                let indexend = locations.indexOf(endBusStop);
+                const shortestPaths = findShortestPaths(graph, indexfirst, indexend, 3);
+                for (let i = 0; i < 3; i++)
+                {
+                    if(shortestPaths[i])
+                        listRoute.push(new BusStage(shortestPaths[i].map(index => locations[index]),null))
                 }
+                // listRoute = [,
+                //                 new BusStage(shortestPaths[1].map(index => locations[index]),null),
+                //                 new BusStage(shortestPaths[2].map(index => locations[index]),null)];
+                if(listRoute.length!=0)
+                for (const route of listRoute) {
+                    let k=0;
+                    for(let k=0;k<busStages.length;k++)
+                        for (const loca of route.listLocation) {
+                            if(busStages[k] && busStages[k].listLocation && busStages[k].listLocation.includes(loca)){
+                                if (!route.RouteId) {
+                                    route.RouteId = [];
+                                }
+                                else if(!route.RouteId.includes(busStages[k].RouteId)){
+                                    route.RouteId += busStages[k].RouteId + " ";
+                                    // console.log("   #Add busStages: ", busStages[k].RouteId, "---------------");
+                                }
+                            }
+                        }
+                }
+            }
+            if(listRoute.length!=0)
+            {
+                return [listRoute,m,j];
             }
         }
     }
-    return listRoute;
+    return [listRoute,k,j];
 }
 
 
@@ -173,22 +192,24 @@ function findBusRoutes(StartPoint, EndPoint) {
 export function Scheduled(StartPoint, EndPoint)
 {
     let listSchedule = [];
-    let listRoute = findBusRoutes(StartPoint, EndPoint);
-    let firstBusStop = getNearestBusStop(StartPoint);
-    let endBusStop = getNearestBusStop(EndPoint);
+    let result=findBusRoutes(StartPoint, EndPoint);
+    let listRoute = result[0]
+    let firstBusStop = getNearestBusStop(StartPoint)[result[1]];
+    let endBusStop = getNearestBusStop(EndPoint)[result[2]];
     let firstDistance = calculateDistance(StartPoint, firstBusStop);
     let endDistance = calculateDistance(endBusStop, EndPoint);
-    for (var i = 0; i < 3; i++){
+    console.log(listRoute)
+    for (var i = 0; i < listRoute.length; i++){
         let BusDistance = 0;
-        for(var j = 1; j < listRoute[i].locations.length; j++){
-            BusDistance += calculateDistance((listRoute[i].locations)[j-1],(listRoute[i].locations)[j]);
+        for(var j = 1; j < listRoute[i].listLocation.length; j++){
+            BusDistance += calculateDistance((listRoute[i].listLocation)[j-1],(listRoute[i].listLocation)[j]);
         }
         let GeneralDistance = firstDistance + BusDistance + endDistance;
         let GeneralPredictTime = (firstDistance/5 +  BusDistance/30 + endDistance/5)*60;
         let SpecificDistances = [firstDistance, BusDistance, endDistance];
         let SpecificPredictTimes = [firstDistance/5*60, BusDistance/30*60, endDistance/5*60];
         let WalkStages = [new WalkStage(StartPoint, firstBusStop), new WalkStage(endBusStop, EndPoint)];
-        let schedule = new Schedule(WalkStages,listRoute[i],GeneralPredictTime,SpecificPredictTimes,GeneralDistance,SpecificDistances);
+        let schedule = new Schedule(WalkStages,[listRoute[i]],GeneralPredictTime,SpecificPredictTimes,GeneralDistance,SpecificDistances);
         listSchedule.push(schedule);
     }
     return listSchedule;
@@ -200,21 +221,59 @@ export function getAppropriateBusAndTime(listBus, schedule)
     let minDistance = Infinity;
     let index = -1;
     for(var i=0; i<listBus.length; i++){
-        let distance = calculateDistance(listBus[i].location, (schedule.BusStages.locations)[0]);
-        if(distance < minDistance && listBus[i].busNumber === (schedule.BusStages.routeId).substring(0,2)){
+        let distance = calculateDistance(listBus[i].location, (schedule.BusStages[0].listLocation)[0]);
+        if(distance < minDistance && (schedule.BusStages[0].RouteId).split(" ").includes(listBus[i].busNumber)){
             minDistance = distance;
             index = i;
         }
     }
-    return [listBus[index], minDistance/30*60];
+    return [listBus[index], minDistance/30];
 }
 
 
    // TESTCASE
-const startPoint = new Location("StartPoint", 106.80, 10.88);
-const endPoint = new Location("EndPoint",106.676, 10.76);
+const startPoint = new Location("StartPoint", 106.78240376903743, 10.88230385);
+const endPoint = new Location("EndPoint",106.8009562, 10.8702524);
 const listBus = [new Bus(startPoint,"50"), new Bus(endPoint,"53")];
 let list = Scheduled(startPoint, endPoint);
 console.log(list[0]);
 console.log(getAppropriateBusAndTime(listBus, list[0]));
 
+// FetchSchedules(startPoint,endPoint);
+
+
+// const AppAPI = (service)=> {
+//     // return 'https://707215b6-b6df-4ae0-9749-7d261a9e3897.mock.pstmn.io'+service;
+//     return '192.168.0.104:3002'+service;
+// }
+
+// import axios from 'axios'
+
+// async function FetchSchedules(StartP,EndP)
+// {
+//   const url = 'localhost:3002/schedule';
+//   const headers = {
+//     'Content-Type': 'application/json',
+//   };
+//   const data={
+//     StartPoint: StartP,
+//     EndPoint: EndP
+//   }
+//   try {
+//     const response = await axios.post(url, data,{
+//       headers: headers});
+//     // console.log("response: ",JSON.stringify(response.data));
+//     //Thay đổi listSchedule
+//     console.log("@@FetchSchedules response.data: ",response.data,"------------------------------@@")
+//     listSchedule = response.data.map((schedule) => {
+//       const temp = new MapViewClass.Schedule();
+      
+//       temp.FromObj(schedule);
+//       // console.log("temp: ", temp);
+//       return temp;
+//     });
+//     console.log("@@FetchSchedules End---------------------------@@")
+//   } catch (error) {
+//     console.error(error);
+//   }
+// }

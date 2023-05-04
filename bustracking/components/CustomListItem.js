@@ -19,16 +19,25 @@ import Constants from 'expo-constants';
 import Destination from '../Layout/Destination';
 import Tickets from '../Layout/Tickets';
 
-export default function CustomListItem({ itemName, setIsBottomNavShowing, setqueryData }) {
+export default function CustomListItem({ item, setIsBottomNavShowing, setqueryData, queryData,type }) {
   return (
-    <View style={styles.container} onTouchStart={() => setIsBottomNavShowing(false)}>
+  <View style={styles.container} onTouchStart={() => {setIsBottomNavShowing(false);
+    if (type === 'departure') {
+      setqueryData({ ...queryData, departure: item.Name, start_point: item});
+    } else {
+      setqueryData({
+        ...queryData,
+        destination: item.Name, end_point: item
+      });
+    }
+  }}>
       <FontAwesome
         style={styles.inputIcon}
         name="map-marker"
         size={20}
         color="red"
       />
-      <Text style={{ marginLeft: 20 }}>{itemName}</Text>
+      <Text style={{ marginLeft: 20 }}>{item.Name}</Text>
     </View>
   );
 }

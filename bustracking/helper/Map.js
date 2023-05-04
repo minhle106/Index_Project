@@ -1,4 +1,6 @@
-export default MapHTML=`<!DOCTYPE html>
+
+const MapHTML=
+`<!DOCTYPE html>
 <html>
   <head>
     <title>Leaflet Map</title>
@@ -15,13 +17,10 @@ export default MapHTML=`<!DOCTYPE html>
     <div id="mapid" style="height: 100vh;"></div>
 
 
-
     <script>
       var map = L.map('mapid').setView([10.781272, 106.535700], 13);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
-          '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-          'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+        attribution: '',
         maxZoom: 20,
         tileSize: 512,
         zoomOffset: -1,
@@ -31,8 +30,19 @@ export default MapHTML=`<!DOCTYPE html>
 
       var layerGroup=L.layerGroup();
       var locationGroup=L.layerGroup();
+      //Màu của kí hiệu bus
+      var redIcon = L.icon({
+        iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+    });
+    
+      
+      let count=0;
+      document.addEventListener('message', (event) => {
 
-      window.addEventListener('message', (event) => {
+        // document.getElementById("log").innerHTML=\`<div>@@----In WebView: \${event.data}----@@</div>\`;
         const message = event.data;
         const data = JSON.parse(message);
         // Xử lý đối tượng JSON được gửi từ ứng dụng React Native tại đây
@@ -85,20 +95,23 @@ export default MapHTML=`<!DOCTYPE html>
           });
         }
         else{//data là {Locations: [<Location>],buses: [<Bus>]} ở dạng obj
+          count++;
+
           if(locationGroup.getLayers()==0)
           {
             data.Locations.forEach((location,index)=>{
-              const marker=L.marker([location.Latitude,location.Longitude])
+              const marker=L.marker([location.Latitude,location.Longitude],{icon: redIcon})
                   .bindPopup(\`\${'xe Bus: '} \${data.buses[index].licence_plate}\`);
               locationGroup.addLayer(marker);
             });
+            locationGroup.addTo(map);
           }
           else{
-            locationGroup.eachLayer((layer,index)=>{
-              const newLatLng = L.latLng(data.Locations[index].Latitude,
-                data.Locations[index].Longitude);
-              layer.setLatLng(newLatLng);
-              layer.setPopupContent(\`\${'xe Bus: '} \${data.buses[index].licence_plate}\`);
+            locationGroup.clearLayers();
+            data.Locations.forEach((location,index)=>{
+              const marker=L.marker([location.Latitude,location.Longitude],{icon: redIcon})
+                  .bindPopup(\`\${'xe Bus: '} \${data.buses[index].licence_plate}\`);
+              locationGroup.addLayer(marker);
             });
           }
         }
@@ -240,3 +253,4 @@ export default MapHTML=`<!DOCTYPE html>
     </script>
   </body>
 </html>`
+export default MapHTML;

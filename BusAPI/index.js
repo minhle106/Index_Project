@@ -3,13 +3,19 @@ import bodyParser from "body-parser";
 import express from "express";
 import routes from "./routes/routes.js";
 import { getJWT_Token, UpdateTelemetry } from "./helper/thingsboard.js";
-
+import * as MapViewClass from './helper/MapViewClass.js'
 const port = 3002;
 const app = express();
 const db_conn=null;
 const REFRESH_INTERVAL = 3000;
-const USER_THINGSBOARD = 'thanhnhanle1407@gmail.com';
+const USER_THINGSBOARD = 'minhletravel106@gmail.com';
 const PASS_THINGSBOARD = '123456';
+
+const listBus=[
+    new MapViewClass.Bus(null,"50",'99cfc6b0-c3f8-11ed-9b15-dd2dac50548f',"50A-1462"),
+    new MapViewClass.Bus(null,"53",'af3250b0-e381-11ed-a4fc-57550caf43ca',"50A-1342"),
+    new MapViewClass.Bus(null,"8",'953de280-c3f8-11ed-9b15-dd2dac50548f',"50A-6562")
+]
 
 // Use Node.js body parsing middleware
 app.use(bodyParser.json());
@@ -26,25 +32,28 @@ const server = app.listen(port, (error) => {
 	console.log(`Server listening on port ${server.address().port}`);
 });
 
-var JWT_Token=null;
-getJWT_Token(USER_THINGSBOARD,PASS_THINGSBOARD)
-    .then((jwt_token)=>{
-        JWT_Token=jwt_token;
-    })
-    .catch((error)=>{
-        console.error(error);
-    })
-setInterval(() => {
+// var JWT_Token=null;
+// getJWT_Token(USER_THINGSBOARD,PASS_THINGSBOARD)
+//     .then((jwt_token)=>{
+//         JWT_Token=jwt_token;
+//     })
+//     .catch((error)=>{
+//         console.error(error);
+//     })
+// setInterval(() => {
 
-    if(JWT_Token)
-    {
-        Promise.all(UpdateTelemetry(JWT_Token,['043088a0-c282-11ed-9b15-dd2dac50548f','505b6fc0-af44-11ed-b62c-7d8052ad39cf']))
-        .then((data)=>{
-            console.log(JSON.stringify(data))
-        })
-        .catch((error)=>{
-            console.error(error);
-        })
-        console.log("--call--")
-    }
-},REFRESH_INTERVAL)
+//     if(JWT_Token)
+//     {
+//         var listEntityId=listBus.map(bus=>bus.EntityId);
+//         // console.log(listBus)
+//         // console.log(listEntityId);
+//         Promise.all(UpdateTelemetry(JWT_Token,listEntityId))
+//         .then((data)=>{
+//             console.log(JSON.stringify(data))
+//         })
+//         .catch((error)=>{
+//             console.error(error);
+//         })
+//         console.log("--call--")
+//     }
+// },REFRESH_INTERVAL)
